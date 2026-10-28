@@ -3,6 +3,7 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 import datetime
+import zoneinfo
 
 # --- 1. Google 試算表連線設定 ---
 @st.cache_resource
@@ -74,8 +75,10 @@ mos_options, snack_options = load_custom_options()
 mos_options["自訂早餐品項"] = 0
 snack_options["自訂點心品項"] = 0
 
-# --- 3. 日期選擇與雲端同步載入 ---
-today_date = datetime.date.today()
+# --- 3. 取得台灣時間並處理日期選擇 ---
+taiwan_tz = zoneinfo.ZoneInfo("Asia/Taipei")
+now_taiwan = datetime.datetime.now(taiwan_tz)
+today_date = now_taiwan.date()
 
 selected_date = st.date_input("📅 選擇記錄日期", value=today_date)
 selected_date_str = selected_date.strftime("%Y/%m/%d")
@@ -148,15 +151,16 @@ else:
 if st.button("✨ 確認送出並寫入雲端試算表"):
     if food_name.strip():
         try:
-            now_time = datetime.datetime.now().strftime("%H:%M")
+            # 取得即時台灣時間
+            current_taiwan_time = datetime.datetime.now(taiwan_tz).strftime("%H:%M")
             
             worksheet = sheet_client.worksheet("飲食紀錄")
-            worksheet.append_row([selected_date_str, now_time, meal_type, food_name, calories])
+            worksheet.append_row([selected_date_str, current_taiwan_time, meal_type, food_name, calories])
             
             if selected_date_str == today_date.strftime("%Y/%m/%d"):
                 st.session_state.total_calories += calories
                 st.session_state.food_log.append({
-                    "時間": now_time, "分類": meal_type, "內容與備註": food_name, "熱量 (大卡)": calories
+                    "時間": current_taiwan_time, "分類": meal_type, "內容與備註": food_name, "熱量 (大卡)": calories
                 })
             st.success(f"成功記錄至 {selected_date_str}！「{food_name}」({calories} 大卡) 已存入雲端！")
         except Exception as e:
@@ -174,15 +178,15 @@ exercise_cal = st.number_input("估算消耗熱量 (大卡)", min_value=0, max_v
 if st.button("💪 送出運動並寫入試算表"):
     if exercise_note:
         try:
-            now_time = datetime.datetime.now().strftime("%H:%M")
+            current_taiwan_time = datetime.datetime.now(taiwan_tz).strftime("%H:%M")
             
             worksheet = sheet_client.worksheet("運動紀錄")
-            worksheet.append_row([selected_date_str, now_time, exercise_note, exercise_cal])
+            worksheet.append_row([selected_date_str, current_taiwan_time, exercise_note, exercise_cal])
             
             if selected_date_str == today_date.strftime("%Y/%m/%d"):
                 st.session_state.exercise_cal += exercise_cal
                 st.session_state.exercise_log.append({
-                    "時間": now_time, "活動內容": exercise_note, "消耗熱量 (大卡)": exercise_cal
+                    "時間": current_taiwan_time, "活動內容": exercise_note, "消耗熱量 (大卡)": exercise_cal
                 })
             st.success(f"運動記錄成功存入 {selected_date_str}！")
         except Exception as e:
