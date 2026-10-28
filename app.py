@@ -25,7 +25,7 @@ st.set_page_config(page_title="May 的日常飲食紀錄", page_icon="🍱", lay
 st.title("🍱 May 的專屬健康紀錄 App")
 
 # --- 2. 從 Google 試算表動態載入早餐與點心品項設定 ---
-@st.cache_data(ttl=10) # 每 10 秒自動重新讀取一次，讓試算表的修改即時生效
+@st.cache_data(ttl=10)
 def load_custom_options():
     default_breakfast = {
         "番茄吉士蛋堡": 288,
@@ -67,7 +67,7 @@ def load_custom_options():
             if s_dict:
                 default_snacks = s_dict
     except Exception:
-        pass # 若尚未建立「品項設定」分頁，則自動使用預設清單
+        pass
     return default_breakfast, default_snacks
 
 mos_options, snack_options = load_custom_options()
@@ -80,7 +80,6 @@ today_date = datetime.date.today()
 selected_date = st.date_input("📅 選擇記錄日期", value=today_date)
 selected_date_str = selected_date.strftime("%Y/%m/%d")
 
-# 重新載入對應選定日期的暫存與數據
 if "current_date_loaded" not in st.session_state or st.session_state.current_date_loaded != selected_date_str:
     st.session_state.total_calories = 0
     st.session_state.exercise_cal = 0
@@ -194,7 +193,7 @@ if st.button("💪 送出運動並寫入試算表"):
 st.divider()
 
 # --- 6. 檢視明細清單與刪除功能 ---
-st.subheader(f"📝 {selected_date_str} 明細清單")
+st.subheader(f"📝 明細清單 ({selected_date_str})")
 tab1, tab2 = st.tabs(["🍱 飲食紀錄", "🏃‍♀️ 運動紀錄"])
 
 with tab1:
@@ -280,6 +279,7 @@ with st.sidebar:
     if st.button("⚠️ 重置今日暫存紀錄", use_container_width=True):
          st.session_state.total_calories = 0
          st.session_state.exercise_cal = 0
+         st.session_state.water_ml = 0
          st.session_state.food_log = []
          st.session_state.exercise_log = []
          st.rerun()
